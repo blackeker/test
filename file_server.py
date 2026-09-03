@@ -21,10 +21,10 @@ SHARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shared_fil
 os.makedirs(SHARE_DIR, exist_ok=True)
 
 def get_local_ips():
-    """Cihazın yerel ağdaki (Hotspot dahil) tüm IP adreslerini bulur."""
+    """Cihazın yerel ağdaki (Hotspot dahil, SIM kartsız/çevrimdışı) tüm IP adreslerini bulur."""
     ips = set()
 
-    # 1. Platforma özel komutlar ile tüm aktif ağ bağdaştırıcılarını tara (çevrimdışı/hotspot desteği)
+    # 1. Platforma özel komutlar ile tara
     if sys.platform == "win32":
         try:
             import subprocess, re
@@ -37,6 +37,7 @@ def get_local_ips():
         except Exception:
             pass
     else:
+        # Linux / Android (Termux)
         try:
             import subprocess, re
             out = subprocess.check_output(["ip", "-4", "addr"], text=True, errors="ignore")
@@ -45,16 +46,45 @@ def get_local_ips():
                 if not ip.startswith("127."):
                     ips.add(ip)
         except Exception:
-            try:
-                out = subprocess.check_output(["ifconfig"], text=True, errors="ignore")
-                for match in re.finditer(r"inet (?:addr:)?(\d+\.\d+\.\d+\.\d+)", out):
-                    ip = match.group(1)
-                    if not ip.startswith("127."):
-                        ips.add(ip)
-            except Exception:
-                pass
+            pass
 
-    # 2. Soket ile aktif rota tespiti
+        try:
+            import subprocess, re
+            out = subprocess.check_output(["ifconfig"], text=True, errors="ignore")
+            for match in re.finditer(r"inet (?:addr:)?(\d+\.\d+\.\d+\.\d+)", out):
+                ip = match.group(1)
+                if not ip.startswith("127."):
+                    ips.add(ip)
+        except Exception:
+            pass
+
+        # Android /proc/net/fib_trie parsing (Hat/İnternet yokken bile IP bulur)
+        try:
+            import re
+            if os.path.exists("/proc/net/fib_trie"):
+                with open("/proc/net/fib_trie", "r") as f:
+                    content = f.read()
+                    for match in re.finditer(r"/32 host LOCAL\s+30\s+1\s+0\s+(\d+\.\d+\.\d+\.\d+)", content):
+                        ip = match.group(1)
+                        if not ip.startswith("127."):
+                            ips.add(ip)
+        except Exception:
+            pass
+
+    # 2. Çevrimdışı UDP Broadcast Soket Taraması (SIM kart / İnternet yokken IP bulur)
+    for target in [("255.255.255.255", 1), ("192.168.255.255", 1), ("10.255.255.255", 1), ("172.31.255.255", 1)]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            s.connect(target)
+            ip = s.getsockname()[0]
+            if ip and not ip.startswith("127."):
+                ips.add(ip)
+            s.close()
+        except Exception:
+            pass
+
+    # 3. Aktif rota soketi
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0.5)
@@ -64,7 +94,7 @@ def get_local_ips():
     except Exception:
         pass
 
-    # 3. Hostname çözümlemesi
+    # 4. Hostname çözümü
     try:
         hostname = socket.gethostname()
         for ip in socket.gethostbyname_ex(hostname)[2]:
@@ -72,6 +102,11 @@ def get_local_ips():
                 ips.add(ip)
     except Exception:
         pass
+
+    # 5. Android Hotspot için bilinen varsayılan IP'leri ekle (Varsa)
+    if sys.platform != "win32":
+        # Samsung / Android Hotspot standart IP'si 192.168.43.1 veya 192.168.49.1
+        ips.add("192.168.43.1")
 
     if not ips:
         ips.add("127.0.0.1")
