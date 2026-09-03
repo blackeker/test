@@ -17,7 +17,20 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 PORT = 8000
-SHARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shared_files")
+
+# Klasör yolu komut satırından girildiyse (veya kısayollar: /sdcard, download, dcim vb.) kullan
+if len(sys.argv) > 1 and sys.argv[1]:
+    target = sys.argv[1].strip()
+    if target.lower() in ["/sdcard", "sdcard", "storage"]:
+        target = "/storage/emulated/0"
+    elif target.lower() in ["download", "downloads", "/sdcard/download"]:
+        target = "/storage/emulated/0/Download"
+    elif target.lower() in ["dcim", "camera", "photos"]:
+        target = "/storage/emulated/0/DCIM"
+    SHARE_DIR = os.path.abspath(target)
+else:
+    SHARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shared_files")
+
 os.makedirs(SHARE_DIR, exist_ok=True)
 
 def get_local_ips():
@@ -638,17 +651,34 @@ class FileTransferHandler(BaseHTTPRequestHandler):
         elif path == "/api/files":
             files_info = []
             if os.path.exists(SHARE_DIR):
-                for fname in sorted(os.listdir(SHARE_DIR)):
-                    fpath = os.path.join(SHARE_DIR, fname)
-                    if os.path.isfile(fpath):
-                        stat = os.stat(fpath)
-                        files_info.append({
-                            "name": fname,
-                            "size": format_size(stat.st_size),
-                            "bytes": stat.st_size,
-                            "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M")
-                        })
-            # En son yüklenenler
+                if os.path.isfile(SHARE_DIR):
+                    stat = os.stat(SHARE_DIR)
+                    fname = os.path.basename(SHARE_DIR)
+                    files_info.append({
+                        "name": fname,
+                        "size": format_size(stat.st_size),
+                        "bytes": stat.st_size,
+                        "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M")
+                    })
+                else:
+                    for root, dirs, files in os.walk(SHARE_DIR):
+                        for fname in files:
+                            if fname.startswith("."):
+                                continue
+                            fpath = os.path.join(root, fname)
+                            rel_name = os.path.relpath(fpath, SHARE_DIR).replace("\\", "/")
+                            try:
+                                stat = os.stat(fpath)
+                                files_info.append({
+                                    "name": rel_name,
+                                    "size": format_size(stat.st_size),
+                                    "bytes": stat.st_size,
+                                    "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M")
+                                })
+                            except Exception:
+                                pass
+
+            # En son yüklenenler / güncellenenler
             files_info.sort(key=lambda x: x["mtime"], reverse=True)
 
             self.send_response(200)
@@ -660,16 +690,16 @@ class FileTransferHandler(BaseHTTPRequestHandler):
             return
 
         elif path.startswith("/download/"):
-            filename = urllib.parse.unquote(path[len("/download/"):])
+            raw_filename = urllib.parse.unquote(path[len("/download/"):])
             # Güvenlik kontrolü (path traversal engelleme)
-            filename = os.path.basename(filename)
-            filepath = os.path.join(SHARE_DIR, filename)
+            filepath = os.path.abspath(os.path.join(SHARE_DIR, raw_filename))
 
-            if os.path.isfile(filepath):
+            if os.path.isfile(filepath) and filepath.startswith(os.path.abspath(SHARE_DIR)):
                 file_size = os.path.getsize(filepath)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/octet-stream")
-                filename_encoded = urllib.parse.quote(filename)
+                filename_only = os.path.basename(filepath)
+                filename_encoded = urllib.parse.quote(filename_only)
                 self.send_header("Content-Disposition", f'attachment; filename="{filename_encoded}"; filename*=UTF-8\'\'{filename_encoded}')
                 self.send_header("Content-Length", str(file_size))
                 self.end_headers()
