@@ -727,6 +727,7 @@ def run():
     
     # Soket tampon boyutunu büyüt (daha yüksek Wi-Fi aktarım hızı için)
     try:
+        httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024)
         httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024)
     except Exception:
