@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-"""
-Yerel Ağ Dosya Paylaşım Sunucusu (Local Wi-Fi File Sharing)
-Windows ve Android (Termux) üzerinde ek hiçbir kütüphane (pip) gerektirmeden çalışır.
-"""
 
 import os
 import sys
 import socket
 import json
 import urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
 
 # Windows konsolunda Unicode/Türkçe karakter ve emoji hatalarını önleme
@@ -393,8 +389,6 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
 <div class="container">
     <header>
-        <h1>⚡ Wi-Fi Dosya Aktarımı</h1>
-        <p>İnternet kotası harcamadan iki cihaz arasında doğrudan yerel aktarım</p>
         <div class="network-badge">
             <span class="dot"></span>
             <span id="network-ip">Bağlantı Hazır</span>
@@ -658,9 +652,10 @@ class FileTransferHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(file_size))
                 self.end_headers()
 
-                # Parça parça gönder (RAM tüketmez, büyük dosyaları destekler)
+                # Parça parça gönder (1 MB tampon ile yüksek aktarım hızı)
+                CHUNK_SIZE = 1024 * 1024
                 with open(filepath, "rb") as f:
-                    while chunk := f.read(64 * 1024):
+                    while chunk := f.read(CHUNK_SIZE):
                         self.wfile.write(chunk)
                 return
             else:
@@ -691,11 +686,12 @@ class FileTransferHandler(BaseHTTPRequestHandler):
 
             content_length = int(self.headers.get("Content-Length", 0))
 
-            # Doğrudan diske akış (streaming)
+            # Doğrudan diske akış (1 MB tampon ile yüksek aktarım hızı)
+            CHUNK_SIZE = 1024 * 1024
             bytes_left = content_length
             with open(target_path, "wb") as f:
                 while bytes_left > 0:
-                    read_chunk = min(bytes_left, 64 * 1024)
+                    read_chunk = min(bytes_left, CHUNK_SIZE)
                     chunk = self.rfile.read(read_chunk)
                     if not chunk:
                         break
@@ -741,7 +737,15 @@ class FileTransferHandler(BaseHTTPRequestHandler):
 
 def run():
     server_address = ("0.0.0.0", PORT)
-    httpd = HTTPServer(server_address, FileTransferHandler)
+    httpd = ThreadingHTTPServer(server_address, FileTransferHandler)
+    
+    # Soket tampon boyutunu büyüt (daha yüksek Wi-Fi aktarım hızı için)
+    try:
+        httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024)
+        httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024)
+    except Exception:
+        pass
+
     ips = get_local_ips()
 
     print("\n" + "=" * 55)
