@@ -90,31 +90,31 @@ INDEX_HTML = r"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ Yerel Dosya Aktarımı</title>
+    <title>Dosya Aktarımı</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --accent: #38bdf8;
-            --accent-hover: #0284c7;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --success: #22c55e;
-            --danger: #ef4444;
+            --bg: #0f1117;
+            --card-bg: #1a1d24;
+            --border: #2a2e39;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
             background-color: var(--bg);
             color: var(--text);
-            padding: 20px;
+            padding: 16px;
             display: flex;
             justify-content: center;
             min-height: 100vh;
@@ -122,82 +122,61 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
         .container {
             width: 100%;
-            max-width: 760px;
+            max-width: 640px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
 
         header {
             text-align: center;
-            padding: 10px 0;
-        }
-
-        header h1 {
-            font-size: 1.6rem;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 6px;
+            padding: 4px 0;
         }
 
         .network-badge {
             display: inline-flex;
             align-items: center;
-            background: #1e293b;
+            background: var(--card-bg);
             border: 1px solid var(--border);
             padding: 6px 14px;
-            border-radius: 9999px;
+            border-radius: 20px;
             font-size: 0.85rem;
-            color: var(--accent);
-            margin-top: 10px;
+            color: var(--text-muted);
             gap: 8px;
         }
 
         .dot {
             width: 8px;
             height: 8px;
-            background: var(--success);
+            background: #22c55e;
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--success);
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 16px;
         }
 
-        /* Yükleme Alanı */
         .dropzone {
             border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 30px 20px;
+            border-radius: 8px;
+            padding: 24px 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
+            transition: border-color 0.15s;
         }
 
         .dropzone:hover, .dropzone.dragover {
             border-color: var(--accent);
-            background: rgba(56, 189, 248, 0.05);
         }
 
         .dropzone svg {
-            width: 48px;
-            height: 48px;
-            fill: var(--accent);
-            margin-bottom: 10px;
+            width: 40px;
+            height: 40px;
+            fill: var(--text-muted);
+            margin-bottom: 8px;
         }
 
         .dropzone input[type="file"] {
@@ -206,32 +185,31 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
         .upload-btn {
             background: var(--accent);
-            color: #0f172a;
-            font-weight: 600;
+            color: #ffffff;
+            font-weight: 500;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-top: 12px;
+            padding: 8px 18px;
+            border-radius: 6px;
+            margin-top: 10px;
             cursor: pointer;
+            font-size: 0.9rem;
             display: inline-block;
-            transition: background 0.2s;
         }
 
         .upload-btn:hover {
             background: var(--accent-hover);
         }
 
-        /* İlerleme Çubuğu */
         .progress-box {
             display: none;
-            margin-top: 16px;
+            margin-top: 14px;
         }
 
         .progress-bar-bg {
             width: 100%;
-            height: 8px;
+            height: 6px;
             background: var(--border);
-            border-radius: 4px;
+            border-radius: 3px;
             overflow: hidden;
         }
 
@@ -250,62 +228,58 @@ INDEX_HTML = r"""<!DOCTYPE html>
             margin-top: 6px;
         }
 
-        /* Dosya Listesi */
         .file-list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .file-list-header h2 {
-            font-size: 1.2rem;
+            font-size: 1.05rem;
             font-weight: 600;
         }
 
         .refresh-btn {
             background: transparent;
             border: 1px solid var(--border);
-            color: var(--text);
-            padding: 6px 12px;
+            color: var(--text-muted);
+            padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
         .refresh-btn:hover {
-            background: var(--border);
+            color: var(--text);
+            border-color: var(--text-muted);
         }
 
         .file-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .file-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 14px;
-            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 12px;
+            background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            transition: transform 0.1s;
+            border-radius: 6px;
         }
 
         .file-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             overflow: hidden;
         }
 
         .file-icon {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             line-height: 1;
         }
 
@@ -316,30 +290,30 @@ INDEX_HTML = r"""<!DOCTYPE html>
         }
 
         .file-name {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 320px;
+            max-width: 280px;
         }
 
         .file-meta {
             font-size: 0.75rem;
             color: var(--text-muted);
-            margin-top: 3px;
+            margin-top: 2px;
         }
 
         .file-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .action-btn {
-            padding: 7px 12px;
-            border-radius: 6px;
-            font-size: 0.82rem;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
             font-weight: 500;
             text-decoration: none;
             cursor: pointer;
@@ -350,34 +324,33 @@ INDEX_HTML = r"""<!DOCTYPE html>
         }
 
         .download-btn {
-            background: #0284c7;
-            color: #fff;
+            background: var(--accent);
+            color: #ffffff;
         }
 
         .download-btn:hover {
-            background: #0369a1;
+            background: var(--accent-hover);
         }
 
         .delete-btn {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: var(--danger);
+            color: #ffffff;
         }
 
         .delete-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
+            background: var(--danger-hover);
         }
 
         .empty-state {
             text-align: center;
-            padding: 30px 10px;
+            padding: 20px 10px;
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 500px) {
             .file-name {
-                max-width: 150px;
+                max-width: 140px;
             }
             .action-btn span {
                 display: none;
@@ -391,7 +364,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
     <header>
         <div class="network-badge">
             <span class="dot"></span>
-            <span id="network-ip">Bağlantı Hazır</span>
+            <span id="network-ip">Sunucu Hazır</span>
         </div>
     </header>
 
@@ -400,8 +373,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
             <svg viewBox="0 0 24 24">
                 <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
             </svg>
-            <h3>Dosyaları Buraya Sürükleyin</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">veya dosya seçmek için tıklayın</p>
+            <h3 style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);">Dosya Yükle</h3>
             <button class="upload-btn" type="button">Dosya Seç</button>
             <input type="file" id="fileInput" multiple>
         </div>
@@ -419,13 +391,11 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
     <div class="card">
         <div class="file-list-header">
-            <h2>Paylaşılan Dosyalar</h2>
-            <button class="refresh-btn" onclick="loadFiles()">
-                ↻ Yenile
-            </button>
+            <h2>Dosyalar</h2>
+            <button class="refresh-btn" onclick="loadFiles()">↻ Yenile</button>
         </div>
         <div class="file-list" id="fileList">
-            <div class="empty-state">Henüz dosya yüklenmedi.</div>
+            <div class="empty-state">Henüz dosya yok.</div>
         </div>
     </div>
 </div>
@@ -441,10 +411,8 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
     document.getElementById('network-ip').textContent = 'http://' + window.location.host;
 
-    // Tıklama ile dosya seçimi
     dropzone.addEventListener('click', () => fileInput.click());
 
-    // Sürükle-bırak olayları
     ['dragenter', 'dragover'].forEach(name => {
         dropzone.addEventListener(name, (e) => {
             e.preventDefault();
@@ -471,7 +439,6 @@ INDEX_HTML = r"""<!DOCTYPE html>
         }
     });
 
-    // Dosyaları sırayla yükle
     async function uploadFiles(files) {
         progressBox.style.display = 'block';
 
@@ -544,7 +511,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
             const files = await res.json();
 
             if (files.length === 0) {
-                fileList.innerHTML = '<div class="empty-state">Henüz paylaşılan dosya yok.</div>';
+                fileList.innerHTML = '<div class="empty-state">Henüz dosya yok.</div>';
                 return;
             }
 
@@ -568,7 +535,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
                 </div>
             `).join('');
         } catch (err) {
-            console.error('Dosyalar yüklenirken hata:', err);
+            console.error('Hata:', err);
         }
     }
 
@@ -586,7 +553,6 @@ INDEX_HTML = r"""<!DOCTYPE html>
         }
     }
 
-    // İlk açılışta dosyaları getir
     loadFiles();
 </script>
 
