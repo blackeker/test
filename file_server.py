@@ -401,6 +401,10 @@ INDEX_HTML = r"""<!DOCTYPE html>
             <span class="dot"></span>
             <span id="network-ip">Sunucu Hazır</span>
         </div>
+        <div id="qr-box" style="margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+            <img id="qr-img" style="width: 130px; height: 130px; border-radius: 8px; background: #ffffff; padding: 4px;" alt="QR Kod">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Müşteri için QR Kodu Tara</span>
+        </div>
     </header>
 
     <div class="card">
@@ -444,7 +448,9 @@ INDEX_HTML = r"""<!DOCTYPE html>
     const progressPercent = document.getElementById('progressPercent');
     const fileList = document.getElementById('fileList');
 
-    document.getElementById('network-ip').textContent = 'http://' + window.location.host;
+    const currentUrl = 'http://' + window.location.host;
+    document.getElementById('network-ip').textContent = currentUrl;
+    document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(currentUrl);
 
     dropzone.addEventListener('click', () => fileInput.click());
 
