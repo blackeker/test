@@ -495,12 +495,17 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
             xhr.open('POST', url, true);
 
+            let lastUpdate = 0;
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percent + '%';
-                    progressPercent.textContent = percent + '%';
-                    progressFile.textContent = `[${index}/${total}] ${file.name}`;
+                    const now = Date.now();
+                    if (now - lastUpdate > 100 || e.loaded === e.total) {
+                        lastUpdate = now;
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressPercent.textContent = percent + '%';
+                        progressFile.textContent = `[${index}/${total}] ${file.name}`;
+                    }
                 }
             };
 
@@ -590,6 +595,16 @@ INDEX_HTML = r"""<!DOCTYPE html>
 """
 
 class FileTransferHandler(BaseHTTPRequestHandler):
+    rbufsize = 256 * 1024
+    wbufsize = 256 * 1024
+
+    def setup(self):
+        super().setup()
+        try:
+            self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except Exception:
+            pass
+
     def log_message(self, format, *args):
         # Sade log formatı
         sys.stdout.write(f"[{datetime.now().strftime('%H:%M:%S')}] {args[0]} - {args[1]}\n")
@@ -652,8 +667,8 @@ class FileTransferHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(file_size))
                 self.end_headers()
 
-                # Parça parça gönder (1 MB tampon ile yüksek aktarım hızı)
-                CHUNK_SIZE = 1024 * 1024
+                # Parça parça gönder (256 KB tampon ile yüksek aktarım hızı)
+                CHUNK_SIZE = 256 * 1024
                 with open(filepath, "rb") as f:
                     while chunk := f.read(CHUNK_SIZE):
                         self.wfile.write(chunk)
@@ -686,13 +701,14 @@ class FileTransferHandler(BaseHTTPRequestHandler):
 
             content_length = int(self.headers.get("Content-Length", 0))
 
-            # Doğrudan diske akış (1 MB tampon ile yüksek aktarım hızı)
-            CHUNK_SIZE = 1024 * 1024
+            # Doğrudan diske anlık akış (streaming)
+            CHUNK_SIZE = 256 * 1024
             bytes_left = content_length
+            read1_func = getattr(self.rfile, "read1", self.rfile.read)
             with open(target_path, "wb") as f:
                 while bytes_left > 0:
                     read_chunk = min(bytes_left, CHUNK_SIZE)
-                    chunk = self.rfile.read(read_chunk)
+                    chunk = read1_func(read_chunk)
                     if not chunk:
                         break
                     f.write(chunk)
