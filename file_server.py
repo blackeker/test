@@ -681,6 +681,11 @@ class FileTransferHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Bulunamadi")
 
     def do_POST(self):
+        # Mobil tarayıcılar (Chrome/Safari) büyük yüklemelerde Expect: 100-continue gönderir
+        if self.headers.get("Expect", "").lower() == "100-continue":
+            self.send_response_only(100)
+            self.end_headers()
+
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/upload":
             query = urllib.parse.parse_qs(parsed.query)
@@ -702,13 +707,12 @@ class FileTransferHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers.get("Content-Length", 0))
 
             # Doğrudan diske anlık akış (streaming)
-            CHUNK_SIZE = 256 * 1024
+            CHUNK_SIZE = 128 * 1024
             bytes_left = content_length
-            read1_func = getattr(self.rfile, "read1", self.rfile.read)
             with open(target_path, "wb") as f:
                 while bytes_left > 0:
                     read_chunk = min(bytes_left, CHUNK_SIZE)
-                    chunk = read1_func(read_chunk)
+                    chunk = self.rfile.read(read_chunk)
                     if not chunk:
                         break
                     f.write(chunk)
