@@ -170,7 +170,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
 
         .container {
             width: 100%;
-            max-width: 640px;
+            max-width: 680px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -210,7 +210,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
         .dropzone {
             border: 2px dashed var(--border);
             border-radius: 8px;
-            padding: 24px 16px;
+            padding: 20px 16px;
             text-align: center;
             cursor: pointer;
             transition: border-color 0.15s;
@@ -221,10 +221,10 @@ INDEX_HTML = r"""<!DOCTYPE html>
         }
 
         .dropzone svg {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             fill: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .dropzone input[type="file"] {
@@ -238,7 +238,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
             border: none;
             padding: 8px 18px;
             border-radius: 6px;
-            margin-top: 10px;
+            margin-top: 8px;
             cursor: pointer;
             font-size: 0.9rem;
             display: inline-block;
@@ -288,6 +288,45 @@ INDEX_HTML = r"""<!DOCTYPE html>
             font-weight: 600;
         }
 
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            overflow-x: auto;
+        }
+
+        .back-btn {
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            background: #374151;
+        }
+
+        .path-text {
+            color: var(--text);
+            font-weight: 500;
+            word-break: break-all;
+        }
+
         .refresh-btn {
             background: transparent;
             border: 1px solid var(--border);
@@ -317,45 +356,71 @@ INDEX_HTML = r"""<!DOCTYPE html>
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 6px;
+            gap: 12px;
+        }
+
+        .folder-item {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .folder-item:hover {
+            background: #171a23;
+            border-color: var(--accent);
         }
 
         .file-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            overflow: hidden;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
         }
 
         .file-icon {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .media-thumb {
+            width: 52px;
+            height: 52px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+            cursor: pointer;
+            background: #000;
         }
 
         .file-details {
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            flex: 1;
+            min-width: 0;
         }
 
         .file-name {
             font-size: 0.9rem;
             font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 280px;
+            color: var(--text);
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.35;
         }
 
         .file-meta {
             font-size: 0.75rem;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .file-actions {
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         .action-btn {
@@ -396,13 +461,36 @@ INDEX_HTML = r"""<!DOCTYPE html>
             font-size: 0.85rem;
         }
 
-        @media (max-width: 500px) {
-            .file-name {
-                max-width: 140px;
-            }
-            .action-btn span {
-                display: none;
-            }
+        /* Lightbox Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.88);
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            max-width: 95%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 2rem;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
         }
     </style>
 </head>
@@ -444,12 +532,20 @@ INDEX_HTML = r"""<!DOCTYPE html>
     <div class="card">
         <div class="file-list-header">
             <h2>Dosyalar</h2>
-            <button class="refresh-btn" onclick="loadFiles()">↻ Yenile</button>
+            <button class="refresh-btn" onclick="loadFiles(currentPath)">↻ Yenile</button>
+        </div>
+        <div class="nav-bar" id="navBar">
+            <span class="path-text" id="pathText">📁 /</span>
         </div>
         <div class="file-list" id="fileList">
             <div class="empty-state">Henüz dosya yok.</div>
         </div>
     </div>
+</div>
+
+<div class="modal" id="mediaModal" onclick="closeModal()">
+    <span class="modal-close" onclick="closeModal()">&times;</span>
+    <div id="modalBody" onclick="event.stopPropagation()"></div>
 </div>
 
 <script>
@@ -460,6 +556,11 @@ INDEX_HTML = r"""<!DOCTYPE html>
     const progressFile = document.getElementById('progressFile');
     const progressPercent = document.getElementById('progressPercent');
     const fileList = document.getElementById('fileList');
+    const navBar = document.getElementById('navBar');
+    const mediaModal = document.getElementById('mediaModal');
+    const modalBody = document.getElementById('modalBody');
+
+    let currentPath = '';
 
     const currentUrl = 'http://' + window.location.host;
     document.getElementById('network-ip').textContent = currentUrl;
@@ -504,7 +605,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
         setTimeout(() => {
             progressBox.style.display = 'none';
             progressBar.style.width = '0%';
-            loadFiles();
+            loadFiles(currentPath);
             fileInput.value = '';
         }, 1000);
     }
@@ -512,7 +613,7 @@ INDEX_HTML = r"""<!DOCTYPE html>
     function uploadSingleFile(file, index, total) {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            const url = '/api/upload?filename=' + encodeURIComponent(file.name);
+            const url = `/api/upload?path=${encodeURIComponent(currentPath)}&filename=${encodeURIComponent(file.name)}`;
 
             xhr.open('POST', url, true);
 
@@ -551,60 +652,120 @@ INDEX_HTML = r"""<!DOCTYPE html>
     function getFileIcon(filename) {
         const ext = filename.split('.').pop().toLowerCase();
         if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼️';
-        if (['mp4', 'mkv', 'mov', 'avi'].includes(ext)) return '🎬';
+        if (['mp4', 'mkv', 'mov', 'avi', 'webm'].includes(ext)) return '🎬';
         if (['mp3', 'wav', 'ogg', 'flac'].includes(ext)) return '🎵';
         if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '📦';
         if (['pdf', 'doc', 'docx', 'txt', 'md'].includes(ext)) return '📄';
         if (['apk'].includes(ext)) return '🤖';
-        return '📁';
+        return '📄';
     }
 
-    async function loadFiles() {
+    async function loadFiles(targetPath = '') {
         try {
-            const res = await fetch('/api/files');
-            const files = await res.json();
+            const res = await fetch(`/api/files?path=${encodeURIComponent(targetPath)}`);
+            const data = await res.json();
 
-            if (files.length === 0) {
-                fileList.innerHTML = '<div class="empty-state">Henüz dosya yok.</div>';
+            currentPath = data.current_path || '';
+            const parentPath = data.parent_path !== null && data.parent_path !== undefined ? data.parent_path : null;
+
+            // Navigasyon Çubuğu (Geri Butonu + Klasör Yolu)
+            let navHtml = '';
+            if (currentPath !== '') {
+                navHtml += `<button class="back-btn" onclick="loadFiles('${encodeURIComponent(parentPath !== null ? parentPath : '')}')">⬅️ Geri</button> `;
+            }
+            navHtml += `<span class="path-text">📂 /${currentPath}</span>`;
+            navBar.innerHTML = navHtml;
+
+            const folders = data.folders || [];
+            const files = data.files || [];
+
+            if (folders.length === 0 && files.length === 0) {
+                fileList.innerHTML = '<div class="empty-state">Bu klasör boş.</div>';
                 return;
             }
 
-            fileList.innerHTML = files.map(file => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <span class="file-icon">${getFileIcon(file.name)}</span>
-                        <div class="file-details">
-                            <span class="file-name" title="${file.name}">${file.name}</span>
-                            <span class="file-meta">${file.size} • ${file.mtime}</span>
+            let html = '';
+
+            // Klasörler
+            folders.forEach(folder => {
+                html += `
+                    <div class="file-item folder-item" onclick="loadFiles('${encodeURIComponent(folder.path)}')">
+                        <div class="file-info">
+                            <span class="file-icon">📁</span>
+                            <div class="file-details">
+                                <span class="file-name">${folder.name}</span>
+                                <span class="file-meta">Klasör</span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">Aç ➔</span>
                         </div>
                     </div>
-                    <div class="file-actions">
-                        <a href="/download/${encodeURIComponent(file.name)}" class="action-btn download-btn" download="${file.name}">
-                            ⬇️ <span>İndir</span>
-                        </a>
-                        <button class="action-btn delete-btn" onclick="deleteFile('${encodeURIComponent(file.name)}')">
-                            🗑️
-                        </button>
+                `;
+            });
+
+            // Dosyalar (Tam İsim + Resim/Video Önizleme)
+            files.forEach(file => {
+                let thumbHtml = `<span class="file-icon">${getFileIcon(file.name)}</span>`;
+                if (file.is_img) {
+                    thumbHtml = `<img src="/view/${encodeURIComponent(file.path)}" class="media-thumb" alt="Önizleme" onclick="openMediaModal('/view/${encodeURIComponent(file.path)}', 'image')">`;
+                } else if (file.is_vid) {
+                    thumbHtml = `<video src="/view/${encodeURIComponent(file.path)}#t=0.5" class="media-thumb" preload="metadata" muted onclick="openMediaModal('/view/${encodeURIComponent(file.path)}', 'video')"></video>`;
+                }
+
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            ${thumbHtml}
+                            <div class="file-details">
+                                <span class="file-name">${file.name}</span>
+                                <span class="file-meta">${file.size} • ${file.mtime}</span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <a href="/download/${encodeURIComponent(file.path)}" class="action-btn download-btn" download="${file.name}">
+                                ⬇️ <span>İndir</span>
+                            </a>
+                            <button class="action-btn delete-btn" onclick="deleteFile('${encodeURIComponent(file.path)}')">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            });
+
+            fileList.innerHTML = html;
         } catch (err) {
             console.error('Hata:', err);
         }
     }
 
-    async function deleteFile(encodedName) {
+    async function deleteFile(encodedPath) {
         if (!confirm('Bu dosyayı silmek istediğinize emin misiniz?')) return;
         try {
-            const res = await fetch('/api/delete?filename=' + encodedName, { method: 'DELETE' });
+            const res = await fetch('/api/delete?filename=' + encodedPath, { method: 'DELETE' });
             if (res.ok) {
-                loadFiles();
+                loadFiles(currentPath);
             } else {
                 alert('Dosya silinemedi.');
             }
         } catch (err) {
             alert('Hata: ' + err);
         }
+    }
+
+    function openMediaModal(src, type) {
+        if (type === 'image') {
+            modalBody.innerHTML = `<img src="${src}" class="modal-content" alt="Önizleme">`;
+        } else if (type === 'video') {
+            modalBody.innerHTML = `<video src="${src}" class="modal-content" controls autoplay style="max-width: 95vw; max-height: 85vh;"></video>`;
+        }
+        mediaModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        mediaModal.style.display = 'none';
+        modalBody.innerHTML = '';
     }
 
     loadFiles();
@@ -649,49 +810,108 @@ class FileTransferHandler(BaseHTTPRequestHandler):
             return
 
         elif path == "/api/files":
-            files_info = []
-            if os.path.exists(SHARE_DIR):
-                if os.path.isfile(SHARE_DIR):
-                    stat = os.stat(SHARE_DIR)
-                    fname = os.path.basename(SHARE_DIR)
-                    files_info.append({
-                        "name": fname,
-                        "size": format_size(stat.st_size),
-                        "bytes": stat.st_size,
-                        "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M")
-                    })
-                else:
-                    for root, dirs, files in os.walk(SHARE_DIR):
-                        for fname in files:
-                            if fname.startswith("."):
-                                continue
-                            fpath = os.path.join(root, fname)
-                            rel_name = os.path.relpath(fpath, SHARE_DIR).replace("\\", "/")
-                            try:
-                                stat = os.stat(fpath)
-                                files_info.append({
-                                    "name": rel_name,
-                                    "size": format_size(stat.st_size),
-                                    "bytes": stat.st_size,
-                                    "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M")
-                                })
-                            except Exception:
-                                pass
+            query = urllib.parse.parse_qs(parsed.query)
+            subpath = query.get("path", [""])[0]
 
-            # En son yüklenenler / güncellenenler
+            target_dir = os.path.abspath(os.path.join(SHARE_DIR, subpath))
+            if not target_dir.startswith(os.path.abspath(SHARE_DIR)) or not os.path.exists(target_dir):
+                target_dir = os.path.abspath(SHARE_DIR)
+                subpath = ""
+
+            rel_current = os.path.relpath(target_dir, SHARE_DIR).replace("\\", "/")
+            if rel_current == ".":
+                rel_current = ""
+
+            parent_path = os.path.dirname(rel_current).replace("\\", "/") if rel_current else None
+            if parent_path == ".":
+                parent_path = ""
+
+            folders = []
+            files_info = []
+
+            if os.path.isdir(target_dir):
+                for entry in sorted(os.listdir(target_dir)):
+                    if entry.startswith("."):
+                        continue
+                    entry_path = os.path.join(target_dir, entry)
+                    rel_item_path = (rel_current + "/" + entry) if rel_current else entry
+
+                    if os.path.isdir(entry_path):
+                        folders.append({
+                            "name": entry,
+                            "type": "dir",
+                            "path": rel_item_path
+                        })
+                    elif os.path.isfile(entry_path):
+                        try:
+                            stat = os.stat(entry_path)
+                            ext = entry.split(".")[-1].lower() if "." in entry else ""
+                            is_img = ext in ["jpg", "jpeg", "png", "gif", "webp", "svg"]
+                            is_vid = ext in ["mp4", "webm", "mov", "mkv", "avi"]
+
+                            files_info.append({
+                                "name": entry,
+                                "type": "file",
+                                "size": format_size(stat.st_size),
+                                "bytes": stat.st_size,
+                                "mtime": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M"),
+                                "path": rel_item_path,
+                                "is_img": is_img,
+                                "is_vid": is_vid
+                            })
+                        except Exception:
+                            pass
+
             files_info.sort(key=lambda x: x["mtime"], reverse=True)
+
+            res_payload = {
+                "current_path": rel_current,
+                "parent_path": parent_path,
+                "folders": folders,
+                "files": files_info
+            }
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            content = json.dumps(files_info).encode("utf-8")
+            content = json.dumps(res_payload).encode("utf-8")
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
             return
 
+        elif path.startswith("/view/"):
+            raw_filename = urllib.parse.unquote(path[len("/view/"):])
+            filepath = os.path.abspath(os.path.join(SHARE_DIR, raw_filename))
+
+            if os.path.isfile(filepath) and filepath.startswith(os.path.abspath(SHARE_DIR)):
+                file_size = os.path.getsize(filepath)
+                self.send_response(200)
+                ext = filepath.split(".")[-1].lower() if "." in filepath else ""
+                content_type = "application/octet-stream"
+                if ext in ["jpg", "jpeg"]: content_type = "image/jpeg"
+                elif ext == "png": content_type = "image/png"
+                elif ext == "gif": content_type = "image/gif"
+                elif ext == "webp": content_type = "image/webp"
+                elif ext == "svg": content_type = "image/svg+xml"
+                elif ext == "mp4": content_type = "video/mp4"
+                elif ext == "webm": content_type = "video/webm"
+                elif ext == "mov": content_type = "video/quicktime"
+
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(file_size))
+                self.end_headers()
+
+                CHUNK_SIZE = 256 * 1024
+                with open(filepath, "rb") as f:
+                    while chunk := f.read(CHUNK_SIZE):
+                        self.wfile.write(chunk)
+                return
+            else:
+                self.send_error(404, "Bulunamadi")
+                return
+
         elif path.startswith("/download/"):
             raw_filename = urllib.parse.unquote(path[len("/download/"):])
-            # Güvenlik kontrolü (path traversal engelleme)
             filepath = os.path.abspath(os.path.join(SHARE_DIR, raw_filename))
 
             if os.path.isfile(filepath) and filepath.startswith(os.path.abspath(SHARE_DIR)):
@@ -704,7 +924,6 @@ class FileTransferHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(file_size))
                 self.end_headers()
 
-                # Parça parça gönder (256 KB tampon ile yüksek aktarım hızı)
                 CHUNK_SIZE = 256 * 1024
                 with open(filepath, "rb") as f:
                     while chunk := f.read(CHUNK_SIZE):
@@ -718,7 +937,6 @@ class FileTransferHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Bulunamadi")
 
     def do_POST(self):
-        # Mobil tarayıcılar (Chrome/Safari) büyük yüklemelerde Expect: 100-continue gönderir
         if self.headers.get("Expect", "").lower() == "100-continue":
             self.send_response_only(100)
             self.end_headers()
@@ -726,24 +944,27 @@ class FileTransferHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/upload":
             query = urllib.parse.parse_qs(parsed.query)
+            subpath = query.get("path", [""])[0]
             filename = query.get("filename", ["uploaded_file"])[0]
             filename = os.path.basename(urllib.parse.unquote(filename))
+
+            target_dir = os.path.abspath(os.path.join(SHARE_DIR, subpath))
+            if not target_dir.startswith(os.path.abspath(SHARE_DIR)) or not os.path.exists(target_dir):
+                target_dir = os.path.abspath(SHARE_DIR)
 
             if not filename:
                 filename = f"file_{int(datetime.now().timestamp())}"
 
-            target_path = os.path.join(SHARE_DIR, filename)
+            target_path = os.path.join(target_dir, filename)
 
-            # Eğer aynı isimde dosya varsa üzerine yazmamak için numara ekle
             base, ext = os.path.splitext(filename)
             counter = 1
             while os.path.exists(target_path):
-                target_path = os.path.join(SHARE_DIR, f"{base}_{counter}{ext}")
+                target_path = os.path.join(target_dir, f"{base}_{counter}{ext}")
                 counter += 1
 
             content_length = int(self.headers.get("Content-Length", 0))
 
-            # Doğrudan diske anlık akış (streaming)
             CHUNK_SIZE = 128 * 1024
             bytes_left = content_length
             with open(target_path, "wb") as f:
@@ -769,13 +990,17 @@ class FileTransferHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/delete":
             query = urllib.parse.parse_qs(parsed.query)
-            filename = query.get("filename", [""])[0]
-            filename = os.path.basename(urllib.parse.unquote(filename))
-            target_path = os.path.join(SHARE_DIR, filename)
+            raw_filename = query.get("filename", [""])[0]
+            raw_filename = urllib.parse.unquote(raw_filename)
+            target_path = os.path.abspath(os.path.join(SHARE_DIR, raw_filename))
 
-            if os.path.isfile(target_path):
+            if os.path.exists(target_path) and target_path.startswith(os.path.abspath(SHARE_DIR)):
                 try:
-                    os.remove(target_path)
+                    if os.path.isdir(target_path):
+                        import shutil
+                        shutil.rmtree(target_path)
+                    else:
+                        os.remove(target_path)
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     res = json.dumps({"status": "deleted"}).encode("utf-8")
